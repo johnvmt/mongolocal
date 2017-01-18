@@ -1,6 +1,6 @@
 {
   "name": "mongolocal",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Basic local implementation of MongoDB",
   "authors": [
     "John Murphy-Teixidor <johnvmt@gmail.com>"
