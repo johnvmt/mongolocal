@@ -1,0 +1,26 @@
+{
+  "name": "mongolocal",
+  "version": "0.0.4",
+  "description": "Basic local implementation of MongoDB",
+  "repository": {
+    "type": "git",
+    "url": "git+https://bitbucket.org/johnvmt/node-mongolocal.git"
+  },
+  "private": true,
+  "author": {
+    "name": "John Murphy-Teixidor",
+    "email": "johnvmt@gmail.com"
+  },
+  "main": "./src/module.js",
+  "dependencies": {
+    "fauxmongo": "0.2.x",
+    "objectid": "1.1.x"
+  },
+  "devDependencies": {
+    "browserify": "11.2.x",
+    "minifyify": "7.3.x"
+  },
+  "scripts": {
+    "prepublish": "node ./browserify.js"
+  }
+}

@@ -1,0 +1,42 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Mocha Tests</title>
+</head>
+<body>
+<div id="mocha"></div>
+
+<script src="../mongolocal.js"></script>
+
+
+<script>
+	var oms = mongolocal({max: 2});
+	oms.insert({object: "someval1" }, function(error, objectExtended) {
+		if(error)
+			throw error;
+		if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+			throw new Error("Invalid object returned by insert");
+
+		var id = objectExtended._id;
+
+		oms.update(id, {object: "someval22"}, function(error, docDiffs) {
+
+			if(error)
+				throw error;
+			else {
+				oms.find(id, function(error, results) {
+					if(error)
+						throw error;
+					if(!results || results.length != 1)
+						throw new Error("inserted object '" + id + "' not found in DB");
+					else if(results[0].object != "someval22")
+						throw new Error("Object not updated");
+					console.log("DONE")
+				});
+			}
+
+		});
+	});
+</script>
+</body>
+</html>
