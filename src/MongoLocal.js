@@ -123,9 +123,9 @@ MongoLocal.prototype.update = function() {
 	var self = this;
 	this._findForEach(parsedArgs.query, function(doc, index) {
 		if(typeof self.config.update == 'function') // override is set (for Polymer)
-			self.config.update(index, self.updateDoc(doc, updateOperations, true));
+			self.config.update(index, self._updateDoc(doc, updateOperations, true));
 		else
-			self.updateDoc(doc, updateOperations, false);
+			self._updateDoc(doc, updateOperations, false);
 	});
 
 	// TODO return WriteResult: https://docs.mongodb.com/v3.0/reference/method/db.collection.update/#writeresults-update
@@ -185,7 +185,7 @@ MongoLocal.prototype.isCapped = function() {
 	return typeof this.config.max == 'number';
 };
 
-MongoLocal.prototype.updateDoc = function(doc, updateOperations, copy) {
+MongoLocal.prototype._updateDoc = function(doc, updateOperations, copy) {
 	if(typeof copy == 'boolean' && copy) // make a copy instead of updating in place
 		doc = JSON.parse(JSON.stringify(doc));
 	var updateMongoOperators = {};
