@@ -1,6 +1,7 @@
+var FauxMongo = require('fauxmongo');
+var ObjectId = require('objectid');
+var EventEmitter = require('wolfy87-eventemitter');
 var Utils = require('./Utils');
-var fauxmongo = require('fauxmongo');
-var objectid = require('objectid');
 
 function MongoLocal(config) {
 	if(typeof config == 'undefined' || config === null)
@@ -10,6 +11,8 @@ function MongoLocal(config) {
 	this.collection = (typeof this.config.collection == 'object' || Array.isArray(this.config.collection)) ? this.config.collection : {};
 	this._cappedDocs = [];
 }
+
+MongoLocal.prototype.__proto__ = EventEmitter.prototype;
 
 MongoLocal.prototype.find = function() {
 	// https://docs.mongodb.com/v3.0/reference/method/db.collection.find/
@@ -24,11 +27,11 @@ MongoLocal.prototype.find = function() {
 	);
 
 	var result = [];
-
 	try {
 		this._findForEach(parsedArgs.query, function (doc) {
 			result.push(doc);
 		});
+
 		// TODO projection
 		parsedArgs.callback(null, result);
 	}
@@ -60,49 +63,57 @@ MongoLocal.prototype.findOne = function() {
  */
 MongoLocal.prototype.insert = function() {
 	// https://docs.mongodb.com/v3.0/reference/method/db.collection.insert/
-	// docs, [callback]
+	// docs, [options], [callback]
+	var mongolocal = this;
 
-	var docs = arguments[0];
-	if(arguments.length == 2) {
-		var options = {};
-		var callback = arguments[1];
-	}
-	else if(arguments.length == 3) {
-		var options = arguments[1];
-		var callback = arguments[2];
-	}
+	var parsedArgs = Utils.parseArgs(
+		arguments,
+		[
+			{name: 'docs', level: 0, validate: function(arg, allArgs) { return typeof(arg) == 'object' }},
+			{name: 'options', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }, default: {}},
+			{name: 'callback', level: 1, validate: function(arg, allArgs) { return typeof(arg) === 'function'; }}
+		]
+	);
 
-	var self = this;
+	var options = Utils.objectMerge({emit: true}, parsedArgs.options);
+
 	try {
-		if (Array.isArray(docs)) // insert multiple docs
-			docs.forEach(insertDoc);
+		if (Array.isArray(parsedArgs.docs)) // insert multiple docs
+			parsedArgs.docs.forEach(insertDoc);
 		else // insert single doc
-			insertDoc(docs);
-		callbackSafe(null, docs);
+			insertDoc(parsedArgs.docs);
+		callbackSafe(null, parsedArgs.docs);
 	}
 	catch(error) {
 		callbackSafe(error, null);
 	}
 
 	function callbackSafe(error, result) {
-		if(typeof callback == 'function')
-			callback(error, result);
+		if(typeof parsedArgs.callback == 'function')
+			parsedArgs.callback(error, result);
 	}
 
 	function insertDoc(doc) {
 		// TODO duplicate docs before adding _id? Check mongo spec
 		if(typeof doc._id == 'undefined')
-			doc._id = objectid();
+			doc._id = ObjectId();
 
-		if(typeof self.config.insert == 'function') // override is set (for Polymer)
-			self.config.insert(doc);
-		else if(Array.isArray(self.collection))
-			self.collection.push(doc);
+		if(typeof mongolocal.config.insert == 'function') // override is set (for Polymer)
+			mongolocal.config.insert(doc);
+		else if(Array.isArray(mongolocal.collection))
+			mongolocal.collection.push(doc);
 		else
-			self.collection[doc._id] = doc;
+			mongolocal.collection[doc._id] = doc;
 
-		self._cappedInsert(doc._id);
+		mongolocal._cappedInsert(doc._id);
+
+		if(options.emit)
+			mongolocal.emit('insert', doc);
 	}
+};
+
+MongoLocal.prototype._cloneObject = function(object) {
+	return JSON.parse(JSON.stringify(object));
 };
 
 MongoLocal.prototype.update = function() {
@@ -113,19 +124,31 @@ MongoLocal.prototype.update = function() {
 		[
 			{name: 'query', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object' || typeof(arg) == 'string'; }, default: {}},
 			{name: 'updateOperations', level: 0, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }},
-			{name: 'options', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }},
+			{name: 'options', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }, default: {}},
 			{name: 'callback', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'function'; }}
 		]
 	);
 
+	var options = Utils.objectMerge({emit: true}, parsedArgs.options);
+
 	var updateOperations = validateUpdate(parsedArgs.updateOperations);
 
-	var self = this;
+	// TODO add multi option
+	var mongolocal = this;
 	this._findForEach(parsedArgs.query, function(doc, index) {
-		if(typeof self.config.update == 'function') // override is set (for Polymer)
-			self.config.update(index, self._updateDoc(doc, updateOperations, true));
+
+		if(options.emit)
+			var unmodifiedDoc = mongolocal._cloneObject(doc);
+
+		if(typeof mongolocal.config.update == 'function') {// override is set (for Polymer)
+			var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, true);
+			mongolocal.config.update(index, unmodifiedDoc, modifiedDoc);
+		}
 		else
-			self._updateDoc(doc, updateOperations, false);
+			var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, false);
+
+		if(options.emit)
+			mongolocal.emit('update', unmodifiedDoc, modifiedDoc);
 	});
 
 	// TODO return WriteResult: https://docs.mongodb.com/v3.0/reference/method/db.collection.update/#writeresults-update
@@ -152,29 +175,37 @@ MongoLocal.prototype.update = function() {
 };
 
 MongoLocal.prototype.remove = function() {
-	// [query,] [justOne]
+	// [query,] [options]
 	// https://docs.mongodb.com/v3.0/reference/method/db.collection.remove/
 
 	var parsedArgs = Utils.parseArgs(
 		arguments,
 		[
 			{name: 'query', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object' || typeof(arg) == 'string'; }, default: {}},
-			{name: 'justOne', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'boolean'; }},
+			{name: 'options', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }, default: {}},
 			{name: 'callback', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'function'; }}
 		]
 	);
 
-	var self = this;
-	self._findForEach(parsedArgs.query, function(doc, index) {
-		var docId = doc._id;
-		if(typeof self.config.remove == 'function')
-			self.config.remove(index);
-		else if(Array.isArray(self.collection))
-			self.collection.splice(index, 1);
-		else
-			delete self.collection[index];
+	var options = Utils.objectMerge({emit: true, justOne: false}, parsedArgs.options);
 
-		self._cappedRemove(docId);
+	var mongolocal = this;
+	mongolocal._findForEach(parsedArgs.query, function(doc, index) {
+		if(options.emit)
+			var docClone = mongolocal._cloneObject(doc);
+
+		var docId = doc._id;
+		if(typeof mongolocal.config.remove == 'function')
+			mongolocal.config.remove(index);
+		else if(Array.isArray(mongolocal.collection))
+			mongolocal.collection.splice(index, 1);
+		else
+			delete mongolocal.collection[index];
+
+		if(options.emit)
+			mongolocal.emit('remove', docClone);
+
+		mongolocal._cappedRemove(docId);
 	});
 
 	if(typeof parsedArgs.callback == 'function')
@@ -185,9 +216,9 @@ MongoLocal.prototype.isCapped = function() {
 	return typeof this.config.max == 'number';
 };
 
-MongoLocal.prototype._updateDoc = function(doc, updateOperations, copy) {
-	if(typeof copy == 'boolean' && copy) // make a copy instead of updating in place
-		doc = JSON.parse(JSON.stringify(doc));
+MongoLocal.prototype._updateDoc = function(doc, updateOperations, clone) {
+	if(typeof clone == 'boolean' && clone) // make a copy instead of updating in place
+		doc = this._cloneObject(doc);
 	var updateMongoOperators = {};
 	Utils.objectForEach(updateOperations, function(operationValue, operationKey) {
 		if(operationKey.charAt(0) == '$') // operation
@@ -197,7 +228,7 @@ MongoLocal.prototype._updateDoc = function(doc, updateOperations, copy) {
 	});
 
 	// TODO add options here
-	fauxmongo.update(doc, updateMongoOperators);
+	FauxMongo.update(doc, updateMongoOperators);
 
 	return doc;
 };
@@ -213,7 +244,7 @@ MongoLocal.prototype._findForEach = function() {
 		]
 	);
 
-	var self = this;
+	var mongolocal = this;
 
 	if(Array.isArray(this.collection)) {// collection is an array
 		parsedArgs.query = typeof parsedArgs.query == 'string' ? {_id: parsedArgs.query} : parsedArgs.query; // convert to complex query
@@ -236,13 +267,13 @@ MongoLocal.prototype._findForEach = function() {
 	}
 
 	function docFilter(doc, index) {
-		if(self._docFilter(doc, parsedArgs.query))
+		if(mongolocal._docFilter(doc, parsedArgs.query))
 			parsedArgs.callback(doc, index)
 	}
 };
 
 MongoLocal.prototype._docFilter = function(doc, query) {
-	return fauxmongo.matchQuery(doc, query);
+	return FauxMongo.matchQuery(doc, query);
 };
 
 MongoLocal.prototype._cappedInsert = function(docId) {
@@ -261,4 +292,6 @@ MongoLocal.prototype._cappedRemove = function(docId) {
 		this._cappedDocs.splice(capIndex, 0);
 };
 
-module.exports = MongoLocal;
+module.exports = function(config) {
+	return new MongoLocal(config);
+};

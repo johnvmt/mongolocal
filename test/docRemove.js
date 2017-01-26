@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-describe('OMS Doc Removal', function(){
+describe('Doc Removal', function(){
 	describe('MongoLocal performs removal', function(){
 		it('should insert a doc, then delete it', function(done) {
 			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js

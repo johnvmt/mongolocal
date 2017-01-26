@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-describe('OMS Doc Insertion', function(){
+describe('Doc Insert', function(){
 	describe('MongoLocal inserts doc', function() {
 		it('should return an _id when doc is inserted', function (done) {
 			var oms = require('../')({}); // use defaults (localhost/test) as defined in defaults.js

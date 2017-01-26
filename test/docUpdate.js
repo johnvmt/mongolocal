@@ -1,6 +1,6 @@
 var assert = require('assert');
 
-describe('OMS Doc Update', function(){
+describe('Doc Update', function(){
 	describe('MongoLocal updates doc', function(){
 		it('should return true when doc is updated', function(done) {
 			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
@@ -39,8 +39,8 @@ describe('OMS Doc Update', function(){
 			var collection = [];
 			var oms = require('../')({
 				collection: collection,
-				update: function(index, updated) {
-					collection[index] = updated;
+				update: function(index, originalDoc, updatedDoc) {
+					collection[index] = updatedDoc;
 				}
 			}); // use defaults (localhost/test) as defined in defaults.js
 

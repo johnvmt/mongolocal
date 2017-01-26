@@ -1,12 +1,12 @@
 {
   "name": "mongolocal",
-  "version": "0.0.6",
+  "version": "1.0.0",
   "description": "Basic local implementation of MongoDB",
   "authors": [
     "John Murphy-Teixidor <johnvmt@gmail.com>"
   ],
   "license": "MIT",
-  "main": "mongolocal.js",
+  "main": "src/MongoLocal.js",
   "keywords": ["mongo","mongodb","database","fauxmongo"],
   "ignore": [
     "**/.*",

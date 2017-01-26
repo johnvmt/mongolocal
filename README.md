@@ -6,6 +6,11 @@ Collections can be stored in an array, or an object with keys in the object corr
 
 NOTE: This project is not affiliated with MongoDB
 
+## Changes in 1.0.0 ##
+
+* Update function defined in config now takes arguments: (index, originalDoc, updatedDoc)
+* Added event emitter on insert, update, remove
+
 ## Installation ##
 
 ### Bower ###

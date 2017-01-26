@@ -1,5 +1,5 @@
 var assert = require('assert');
-var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
+var oms = require('../')();
 
 function uniqueId() {
 	function s4() {
@@ -11,7 +11,7 @@ function uniqueId() {
 		s4() + '-' + s4() + s4() + s4();
 }
 
-describe('OMS Doc Find', function(){
+describe('Doc Find', function(){
 	describe('Database doc', function(){
 		it('should insert a doc, then return it', function(done) {
 			var key = uniqueId();
