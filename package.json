@@ -1,6 +1,6 @@
 {
   "name": "mongolocal",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Basic local implementation of MongoDB",
   "repository": {
     "type": "git",

@@ -257,7 +257,7 @@ MongoLocal.prototype._findForEach = function() {
 	else { // collection is an object
 		// convert object({_id: x}) to string(x)
 		try {
-			if (parsedArgs.query == {_id: parsedArgs.query._id})
+			if(typeof parsedArgs.query == 'object' && Object.keys(parsedArgs.query).length == 1 && typeof parsedArgs.query._id != 'undefined')
 				parsedArgs.query = parsedArgs.query._id;
 		}
 		catch(error) {}

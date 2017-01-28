@@ -13,7 +13,7 @@ describe('Doc Update', function(){
 
 				var id = objectExtended._id;
 
-				oms.update(id, {object: "someval22"}, function(error, docDiffs) {
+				oms.update({_id: id}, {object: "someval22"}, function(error, docDiffs) {
 
 					if(error)
 						throw error;

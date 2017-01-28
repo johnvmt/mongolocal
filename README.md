@@ -7,6 +7,10 @@ Collections can be stored in an array, or an object with keys in the object corr
 NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
+
+### Version 1.0.2 ###
+
+* Corrected bug to speed up searching by index in an Object-based collection
  
 ### Version 1.0.1 ###
  
