@@ -6,7 +6,15 @@ Collections can be stored in an array, or an object with keys in the object corr
 
 NOTE: This project is not affiliated with MongoDB
 
-## Changes in 1.0.0 ##
+## Changelog ##
+ 
+### Version 1.0.1 ###
+ 
+* Added cascadeEmit option so that inserting into a capped collection can trigger or not trigger a removal event
+* Uses indexed linked list to store capped IDs, to reduce removal time on long lists
+
+
+### Version 1.0.0 ###
 
 * Update function defined in config now takes arguments: (index, originalDoc, updatedDoc)
 * Added event emitter on insert, update, remove

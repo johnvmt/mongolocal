@@ -2,6 +2,7 @@ var FauxMongo = require('fauxmongo');
 var ObjectId = require('objectid');
 var EventEmitter = require('wolfy87-eventemitter');
 var Utils = require('./Utils');
+var IndexedLinkedList = require('./IndexedLinkedList');
 
 function MongoLocal(config) {
 	if(typeof config == 'undefined' || config === null)
@@ -9,7 +10,7 @@ function MongoLocal(config) {
 
 	this.config = config;
 	this.collection = (typeof this.config.collection == 'object' || Array.isArray(this.config.collection)) ? this.config.collection : {};
-	this._cappedDocs = [];
+	this._cappedDocs = IndexedLinkedList();
 }
 
 MongoLocal.prototype.__proto__ = EventEmitter.prototype;
@@ -76,6 +77,7 @@ MongoLocal.prototype.insert = function() {
 	);
 
 	var options = Utils.objectMerge({emit: true}, parsedArgs.options);
+	options = Utils.objectMerge({emitCascade: options.emit}, options); // add emitCascade option
 
 	try {
 		if (Array.isArray(parsedArgs.docs)) // insert multiple docs
@@ -105,7 +107,7 @@ MongoLocal.prototype.insert = function() {
 		else
 			mongolocal.collection[doc._id] = doc;
 
-		mongolocal._cappedInsert(doc._id);
+		mongolocal._cappedInsert(doc._id, options.emitCascade);
 
 		if(options.emit)
 			mongolocal.emit('insert', doc);
@@ -130,6 +132,7 @@ MongoLocal.prototype.update = function() {
 	);
 
 	var options = Utils.objectMerge({emit: true}, parsedArgs.options);
+	options = Utils.objectMerge({emitCascade: options.emit}, options); // add emitCascade option
 
 	var updateOperations = validateUpdate(parsedArgs.updateOperations);
 
@@ -148,7 +151,7 @@ MongoLocal.prototype.update = function() {
 			var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, false);
 
 		if(options.emit)
-			mongolocal.emit('update', unmodifiedDoc, modifiedDoc);
+			mongolocal.emit('update', unmodifiedDoc, modifiedDoc, updateOperations);
 	});
 
 	// TODO return WriteResult: https://docs.mongodb.com/v3.0/reference/method/db.collection.update/#writeresults-update
@@ -188,6 +191,7 @@ MongoLocal.prototype.remove = function() {
 	);
 
 	var options = Utils.objectMerge({emit: true, justOne: false}, parsedArgs.options);
+	options = Utils.objectMerge({emitCascade: options.emit}, options); // add emitCascade option
 
 	var mongolocal = this;
 	mongolocal._findForEach(parsedArgs.query, function(doc, index) {
@@ -276,20 +280,26 @@ MongoLocal.prototype._docFilter = function(doc, query) {
 	return FauxMongo.matchQuery(doc, query);
 };
 
-MongoLocal.prototype._cappedInsert = function(docId) {
+MongoLocal.prototype._cappedInsert = function(docId, emit) {
+	if(typeof emit != 'boolean')
+		emit = true;
+
 	if(this.isCapped()) {
-		this._cappedDocs.push(docId); // add to cap index
-		while(this._cappedDocs.length > this.config.max) {
-			// TODO change this._cappedDocs.shift() to this._cappedDocs[0]? (if remove is synchronous)
-			this.remove(this._cappedDocs.shift(), true);
-		}
+		this._cappedDocs.push(docId, docId); // add to cap index
+
+		while(this._cappedDocs.length > this.config.max)
+			this.remove(this._cappedDocs.dequeue(), {emit: emit});
 	}
 };
 
 MongoLocal.prototype._cappedRemove = function(docId) {
-	var capIndex = this._cappedDocs.indexOf(docId);
-	if(capIndex >= 0)
-		this._cappedDocs.splice(capIndex, 0);
+	try {
+		this._cappedDocs.remove(docId);
+	}
+	catch(error) {
+		if(error.message != 'undefined_item')
+			throw error;
+	}
 };
 
 module.exports = function(config) {
