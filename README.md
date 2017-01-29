@@ -8,6 +8,11 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.1.0 ###
+
+* Added findOne function
+* Update function now defaults to updating a single doc (use multi option to update many)
+
 ### Version 1.0.2 ###
 
 * Corrected bug to speed up searching by index in an Object-based collection

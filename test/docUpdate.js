@@ -34,6 +34,67 @@ describe('Doc Update', function(){
 		});
 	});
 
+	describe('MongoLocal updates doc, multi: false option', function(){
+		it('should update a single doc', function(done) {
+			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
+
+			for(var ctr = 0; ctr < 10; ctr++) {
+				oms.insert({key: "val" });
+			}
+
+			oms.update({}, {key: "val2"});
+
+			oms.find({}, function(error, docs) {
+
+				if(error) {
+					throw new Error(error);
+				}
+				else {
+					var updated = 0;
+					docs.forEach(function(doc) {
+						if (doc.key == 'val2')
+							updated++;
+					});
+					if(updated > 1)
+						throw new Error("Too many docs updated");
+					else
+						done();
+				}
+			});
+
+		});
+	});
+
+	describe('MongoLocal updates doc, multi: false option', function(){
+		it('should update multiple docs', function(done) {
+			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
+
+			for(var ctr = 0; ctr < 10; ctr++) {
+				oms.insert({key: "val" });
+			}
+
+			oms.update({}, {key: "val2"}, {multi: true});
+
+			oms.find({}, function(error, docs) {
+				if(error) {
+					throw new Error(error);
+				}
+				else {
+					var updated = 0;
+					docs.forEach(function(doc) {
+						if (doc.key == 'val2')
+							updated++;
+					});
+					if(updated != 10)
+						throw new Error("Not enough docs updated");
+					else
+						done();
+				}
+			});
+
+		});
+	});
+
 	describe('MongoLocal triggers update callback', function(){
 		it('should return true when doc is updated', function(done) {
 			var collection = [];

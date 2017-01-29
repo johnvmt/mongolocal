@@ -17,7 +17,7 @@ MongoLocal.prototype.__proto__ = EventEmitter.prototype;
 
 MongoLocal.prototype.find = function() {
 	// https://docs.mongodb.com/v3.0/reference/method/db.collection.find/
-	// collection, [query,] [projection,] [callback]
+	// [query,] [projection,] [callback]
 	var parsedArgs = Utils.parseArgs(
 		arguments,
 		[
@@ -41,9 +41,9 @@ MongoLocal.prototype.find = function() {
 	}
 };
 
-/*
 MongoLocal.prototype.findOne = function() {
 	// https://docs.mongodb.com/v3.0/reference/method/db.collection.findOne/
+	// [query,] [projection,] [callback]
 	// collection, [query,] [projection,] [callback]
 	var parsedArgs = Utils.parseArgs(
 		arguments,
@@ -53,8 +53,22 @@ MongoLocal.prototype.findOne = function() {
 			{name: 'callback', level: 0, validate: function(arg, allArgs) { return typeof(arg) === 'function'; }}
 		]
 	);
+
+	var BreakException = {};
+	var result = undefined;
+	try {
+		this._findForEach(parsedArgs.query, function (doc) {
+			result = doc;
+			throw BreakException; // break out of loop
+		});
+	}
+	catch(error) {
+		if(error == BreakException)
+			parsedArgs.callback(null, result);
+		else
+			parsedArgs.callback(error, null);
+	}
 };
-*/
 
 /**
  *
@@ -131,50 +145,44 @@ MongoLocal.prototype.update = function() {
 		]
 	);
 
-	var options = Utils.objectMerge({emit: true}, parsedArgs.options);
+	var options = Utils.objectMerge({emit: true, multi: false}, parsedArgs.options);
 	options = Utils.objectMerge({emitCascade: options.emit}, options); // add emitCascade option
 
-	var updateOperations = validateUpdate(parsedArgs.updateOperations);
+	var updateOperations = this._validateUpdate(parsedArgs.updateOperations);
+
+	if(!options.multi)
+		var BreakException = {};
 
 	// TODO add multi option
 	var mongolocal = this;
-	this._findForEach(parsedArgs.query, function(doc, index) {
 
-		if(options.emit)
-			var unmodifiedDoc = mongolocal._cloneObject(doc);
+	try {
+		this._findForEach(parsedArgs.query, function (doc, index) {
+			if (options.emit)
+				var unmodifiedDoc = mongolocal._cloneObject(doc);
 
-		if(typeof mongolocal.config.update == 'function') {// override is set (for Polymer)
-			var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, true);
-			mongolocal.config.update(index, unmodifiedDoc, modifiedDoc);
-		}
-		else
-			var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, false);
+			if (typeof mongolocal.config.update == 'function') {// override is set (for Polymer)
+				var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, true);
+				mongolocal.config.update(index, unmodifiedDoc, modifiedDoc);
+			}
+			else
+				var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, false);
 
-		if(options.emit)
-			mongolocal.emit('update', unmodifiedDoc, modifiedDoc, updateOperations);
-	});
+			if (options.emit)
+				mongolocal.emit('update', unmodifiedDoc, modifiedDoc, updateOperations);
+
+			if (!options.multi)
+				throw BreakException;
+		});
+	}
+	catch(exception) {
+		if (exception !== BreakException)
+			throw exception;
+	}
 
 	// TODO return WriteResult: https://docs.mongodb.com/v3.0/reference/method/db.collection.update/#writeresults-update
 	if(typeof parsedArgs.callback == 'function')
 		parsedArgs.callback(null, true);
-
-	function validateUpdate(update) {
-		var validated = {};
-
-		Utils.objectForEach(update, function(attributeVal, attributeKey) {
-			if(attributeKey == '$set') // merge set with attributes already set
-				validated['$set'] = Utils.objectMerge(validated['$set'], attributeKey);
-			else if(attributeKey.charAt(0) == '$') // any other operation (pass through)
-				validated[attributeKey] = attributeVal;
-			else { // regular attribute (non-operation)
-				if(typeof validated['$set'] != 'object' || validated['$set'] == null)
-					validated['$set'] = {};
-				validated['$set'][attributeKey] = attributeVal;
-			}
-		});
-
-		return validated;
-	}
 };
 
 MongoLocal.prototype.remove = function() {
@@ -218,6 +226,30 @@ MongoLocal.prototype.remove = function() {
 
 MongoLocal.prototype.isCapped = function() {
 	return typeof this.config.max == 'number';
+};
+
+/**
+ * Validate and fix update operations
+ * @param update
+ * @returns {{}}
+ * @private
+ */
+MongoLocal.prototype._validateUpdate = function(update) {
+	var validated = {};
+
+	Utils.objectForEach(update, function(attributeVal, attributeKey) {
+		if(attributeKey == '$set') // merge set with attributes already set
+			validated['$set'] = Utils.objectMerge(validated['$set'], attributeKey);
+		else if(attributeKey.charAt(0) == '$') // any other operation (pass through)
+			validated[attributeKey] = attributeVal;
+		else { // regular attribute (non-operation)
+			if(typeof validated['$set'] != 'object' || validated['$set'] == null)
+				validated['$set'] = {};
+			validated['$set'][attributeKey] = attributeVal;
+		}
+	});
+
+	return validated;
 };
 
 MongoLocal.prototype._updateDoc = function(doc, updateOperations, clone) {
