@@ -124,7 +124,7 @@ MongoLocal.prototype.insert = function() {
 		mongolocal._cappedInsert(doc._id, options.emitCascade);
 
 		if(options.emit)
-			mongolocal.emit('insert', doc);
+			mongolocal.emit('insert', doc, options);
 	}
 };
 
@@ -215,7 +215,7 @@ MongoLocal.prototype.remove = function() {
 			delete mongolocal.collection[index];
 
 		if(options.emit)
-			mongolocal.emit('remove', docClone);
+			mongolocal.emit('remove', docClone, options);
 
 		mongolocal._cappedRemove(docId);
 	});

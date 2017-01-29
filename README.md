@@ -10,7 +10,7 @@ NOTE: This project is not affiliated with MongoDB
 
 ### Version 1.1.1 ###
 
-* Update event emits options as last argument
+* Events now emit options as last argument
 
 ### Version 1.1.0 ###
 
