@@ -145,19 +145,21 @@ MongoLocal.prototype.update = function() {
 		]
 	);
 
-	var options = Utils.objectMerge({emit: true, multi: false}, parsedArgs.options);
+	var mongolocal = this;
+
+	var options = Utils.objectMerge({emit: true, multi: false, upsert: false}, parsedArgs.options);
 	options = Utils.objectMerge({emitCascade: options.emit}, options); // add emitCascade option
 
+	var query = mongolocal._validateQuery(parsedArgs.query);
 	var updateOperations = this._validateUpdate(parsedArgs.updateOperations);
 
 	if(!options.multi)
 		var BreakException = {};
 
-	// TODO add multi option
-	var mongolocal = this;
-
 	try {
+		var numUpdated = 0;
 		this._findForEach(parsedArgs.query, function (doc, index) {
+			numUpdated++;
 			if (options.emit)
 				var unmodifiedDoc = mongolocal._cloneObject(doc);
 
@@ -174,6 +176,19 @@ MongoLocal.prototype.update = function() {
 			if (!options.multi)
 				throw BreakException;
 		});
+
+		if(!numUpdated && options.upsert) { // Upsert
+			// https://docs.mongodb.com/manual/reference/method/db.collection.update/#upsert-option
+			var insertDoc = {};
+
+			if(typeof query._id != 'undefined')
+				insertDoc._id = query._id;
+			FauxMongo.update(insertDoc, updateOperations);
+
+			var insertOptions = mongolocal._cloneObject(options);
+			insertOptions.emit = insertOptions.emitCascade;
+			mongolocal.insert(insertDoc, insertOptions, parsedArgs.callback);
+		}
 	}
 	catch(exception) {
 		if (exception !== BreakException)
@@ -181,7 +196,7 @@ MongoLocal.prototype.update = function() {
 	}
 
 	// TODO return WriteResult: https://docs.mongodb.com/v3.0/reference/method/db.collection.update/#writeresults-update
-	if(typeof parsedArgs.callback == 'function')
+	if(typeof parsedArgs.callback == 'function' && numUpdated && !options.upsert)
 		parsedArgs.callback(null, true);
 };
 
@@ -202,7 +217,10 @@ MongoLocal.prototype.remove = function() {
 	options = Utils.objectMerge({emitCascade: options.emit}, options); // add emitCascade option
 
 	var mongolocal = this;
-	mongolocal._findForEach(parsedArgs.query, function(doc, index) {
+
+	var query = mongolocal._validateQuery(parsedArgs.query);
+
+		mongolocal._findForEach(query, function(doc, index) {
 		if(options.emit)
 			var docClone = mongolocal._cloneObject(doc);
 
@@ -252,6 +270,13 @@ MongoLocal.prototype._validateUpdate = function(update) {
 	return validated;
 };
 
+MongoLocal.prototype._validateQuery = function(query) {
+	if(typeof query != 'object')
+		return {_id: query};
+	else
+		return query;
+};
+
 MongoLocal.prototype._updateDoc = function(doc, updateOperations, clone) {
 	if(typeof clone == 'boolean' && clone) // make a copy instead of updating in place
 		doc = this._cloneObject(doc);
@@ -282,28 +307,23 @@ MongoLocal.prototype._findForEach = function() {
 
 	var mongolocal = this;
 
+	var query = mongolocal._validateQuery(parsedArgs.query);
+
 	if(Array.isArray(this.collection)) {// collection is an array
-		parsedArgs.query = typeof parsedArgs.query == 'string' ? {_id: parsedArgs.query} : parsedArgs.query; // convert to complex query
 		this.collection.forEach(docFilter);
 	}
 	else { // collection is an object
-		// convert object({_id: x}) to string(x)
-		try {
-			if(typeof parsedArgs.query == 'object' && Object.keys(parsedArgs.query).length == 1 && typeof parsedArgs.query._id != 'undefined')
-				parsedArgs.query = parsedArgs.query._id;
-		}
-		catch(error) {}
 
-		if(typeof parsedArgs.query == 'string') { // collection is an object, looking for doc by index
-			if (typeof this.collection[parsedArgs.query]) // doc exists
-				parsedArgs.callback(this.collection[parsedArgs.query], parsedArgs.query);
+		if(Object.keys(query).length == 1 && typeof query._id != 'undefined') { // collection is an object, looking for doc by index
+			if (typeof this.collection[query._id]) // doc exists
+				parsedArgs.callback(this.collection[query._id], query._id);
 		}
 		else // collection is an object, complex query
 			Utils.objectForEach(this.collection, docFilter);
 	}
 
 	function docFilter(doc, index) {
-		if(mongolocal._docFilter(doc, parsedArgs.query))
+		if(mongolocal._docFilter(doc, query))
 			parsedArgs.callback(doc, index)
 	}
 };
@@ -319,8 +339,9 @@ MongoLocal.prototype._cappedInsert = function(docId, emit) {
 	if(this.isCapped()) {
 		this._cappedDocs.push(docId, docId); // add to cap index
 
-		while(this._cappedDocs.length > this.config.max)
+		while(this._cappedDocs.length > this.config.max) {
 			this.remove(this._cappedDocs.dequeue(), {emit: emit});
+		}
 	}
 };
 

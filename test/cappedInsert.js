@@ -34,6 +34,7 @@ describe('Doc Insert', function(){
 				else {
 					var id = object._id;
 					oms.find({}, function (error, results) {
+
 						if (error)
 							throw error;
 						if (!results || results.length != maxLength)
@@ -94,5 +95,4 @@ describe('Doc Insert', function(){
 			});
 		});
 	});
-
 });

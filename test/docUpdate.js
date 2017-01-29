@@ -1,6 +1,30 @@
 var assert = require('assert');
 
 describe('Doc Update', function(){
+	describe('MongoLocal upsert doc', function(){
+		it('should insert a doc if the query does not match', function(done) {
+			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
+
+			oms.update({key: "val2", object: "obj"}, {key: "val"}, {upsert: true}, function(error, docDiffs) {
+				if(error)
+					throw error;
+				else {
+					oms.find({key: "val"}, function(error, results) {
+						if(error)
+							throw error;
+						if(!results || results.length != 1)
+							throw new Error("inserted object '" + id + "' not found in DB");
+						else if(results[0].key != "val")
+							throw new Error("Object not updated");
+
+						done();
+					});
+				}
+
+			});
+		});
+	});
+
 	describe('MongoLocal updates doc', function(){
 		it('should return true when doc is updated', function(done) {
 			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js

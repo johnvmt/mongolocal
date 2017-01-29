@@ -8,6 +8,10 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.1.2 ###
+
+* Added upsert option to update function
+
 ### Version 1.1.1 ###
 
 * Events now emit options as last argument
