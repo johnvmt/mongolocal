@@ -8,6 +8,10 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.1.1 ###
+
+* Update event emits options as last argument
+
 ### Version 1.1.0 ###
 
 * Added findOne function

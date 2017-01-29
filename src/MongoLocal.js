@@ -169,7 +169,7 @@ MongoLocal.prototype.update = function() {
 				var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, false);
 
 			if (options.emit)
-				mongolocal.emit('update', unmodifiedDoc, modifiedDoc, updateOperations);
+				mongolocal.emit('update', unmodifiedDoc, modifiedDoc, updateOperations, options);
 
 			if (!options.multi)
 				throw BreakException;
