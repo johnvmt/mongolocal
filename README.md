@@ -8,6 +8,10 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.1.3 ###
+
+* Fixed bug in findOne that caused it to not return when result set was null
+
 ### Version 1.1.2 ###
 
 * Added upsert option to update function

@@ -68,6 +68,7 @@ MongoLocal.prototype.findOne = function() {
 		else
 			parsedArgs.callback(error, null);
 	}
+	parsedArgs.callback(null, null);
 };
 
 /**
