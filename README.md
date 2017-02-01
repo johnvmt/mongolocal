@@ -8,6 +8,10 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.1.4 ###
+
+* Fixed a bug introduced in 1.1.3 that caused callbacks to be called twice in findOne
+
 ### Version 1.1.3 ###
 
 * Fixed bug in findOne that caused it to not return when result set was null

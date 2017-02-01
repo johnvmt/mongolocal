@@ -61,6 +61,7 @@ MongoLocal.prototype.findOne = function() {
 			result = doc;
 			throw BreakException; // break out of loop
 		});
+		parsedArgs.callback(null, null);
 	}
 	catch(error) {
 		if(error == BreakException)
@@ -68,7 +69,6 @@ MongoLocal.prototype.findOne = function() {
 		else
 			parsedArgs.callback(error, null);
 	}
-	parsedArgs.callback(null, null);
 };
 
 /**
