@@ -258,7 +258,7 @@ MongoLocal.prototype._validateUpdate = function(update) {
 
 	Utils.objectForEach(update, function(attributeVal, attributeKey) {
 		if(attributeKey == '$set') // merge set with attributes already set
-			validated['$set'] = Utils.objectMerge(validated['$set'], attributeKey);
+			validated['$set'] = Utils.objectMerge(validated['$set'], attributeVal);
 		else if(attributeKey.charAt(0) == '$') // any other operation (pass through)
 			validated[attributeKey] = attributeVal;
 		else { // regular attribute (non-operation)
