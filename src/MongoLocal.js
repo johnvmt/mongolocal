@@ -96,9 +96,9 @@ MongoLocal.prototype.insert = function() {
 
 	try {
 		if (Array.isArray(parsedArgs.docs)) // insert multiple docs
-			parsedArgs.docs.forEach(insertDoc);
+			parsedArgs.docs.forEach(insertDocSafe);
 		else // insert single doc
-			insertDoc(parsedArgs.docs);
+			insertDocSafe(parsedArgs.docs);
 		callbackSafe(null, parsedArgs.docs);
 	}
 	catch(error) {
@@ -110,11 +110,25 @@ MongoLocal.prototype.insert = function() {
 			parsedArgs.callback(error, result);
 	}
 
+	function insertDocSafe(doc) {
+		if(typeof doc._id == 'undefined') {
+			doc._id = ObjectId();
+			insertDoc(doc);
+		}
+		else {
+			mongolocal.findOne({_id: doc._id}, function(error, result) {
+				if(error)
+					throw new Error('find_error');
+				else if(result != null)
+					throw new Error('id_exists');
+				else
+					insertDoc(doc);
+			});
+		}
+	}
+
 	function insertDoc(doc) {
 		// TODO duplicate docs before adding _id? Check mongo spec
-		if(typeof doc._id == 'undefined')
-			doc._id = ObjectId();
-
 		if(typeof mongolocal.config.insert == 'function') // override is set (for Polymer)
 			mongolocal.config.insert(doc);
 		else if(Array.isArray(mongolocal.collection))

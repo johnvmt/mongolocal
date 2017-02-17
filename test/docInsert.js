@@ -48,4 +48,25 @@ describe('Doc Insert', function(){
 			});
 		});
 	});
+
+	describe('MongoLocal inserts doc', function() {
+		it('should trigger an error when a doc with existing _id is inserted', function (done) {
+			var oms = require('../')({}); // use defaults (localhost/test) as defined in defaults.js
+
+			var doc = {key: "someval1"};
+			oms.insert(doc, function (error, writeResult) {
+				if (error)
+					throw error;
+				else {
+					var docClone = JSON.parse(JSON.stringify(doc));
+					oms.insert(docClone, function(error, writeResult) {
+						if (error.message == 'id_exists')
+							done();
+						else
+							throw new Error("Doesn't throw error on duplicate");
+					});
+				}
+			});
+		});
+	});
 });

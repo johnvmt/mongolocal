@@ -8,6 +8,10 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.1.6 ###
+
+* Inserting doc with id that's already in collection triggers error
+
 ### Version 1.1.5 ###
 
 * Fixed update validation bug
