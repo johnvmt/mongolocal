@@ -9,7 +9,8 @@ describe('Doc Update', function(){
 				if(error)
 					throw error;
 				else {
-					oms.find({key: "val"}, function(error, results) {
+					var cursor = oms.find({key: "val"});
+					cursor.toArray(function(error, results) {
 						if(error)
 							throw error;
 						if(!results || results.length != 1)
@@ -29,20 +30,22 @@ describe('Doc Update', function(){
 		it('should return true when doc is updated', function(done) {
 			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
 
-			oms.insert({object: "someval1" }, function(error, objectExtended) {
+			var doc = {object: "someval1" };
+			oms.insert(doc, function(error, objectExtended) {
 				if(error)
 					throw error;
-				if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+				if(typeof doc != "object" || typeof doc._id == "undefined")
 					throw new Error("Invalid object returned by insert");
 
-				var id = objectExtended._id;
+				var id = doc._id;
 
 				oms.update({_id: id}, {object: "someval22"}, function(error, docDiffs) {
 
 					if(error)
 						throw error;
 					else {
-						oms.find(id, function(error, results) {
+						var cursor = oms.find(id);
+						cursor.toArray(function(error, results) {
 							if(error)
 								throw error;
 							if(!results || results.length != 1)
@@ -68,8 +71,8 @@ describe('Doc Update', function(){
 
 			oms.update({}, {key: "val2"});
 
-			oms.find({}, function(error, docs) {
-
+			var cursor = oms.find({});
+			cursor.toArray(function(error, docs) {
 				if(error) {
 					throw new Error(error);
 				}
@@ -99,7 +102,8 @@ describe('Doc Update', function(){
 
 			oms.update({}, {key: "val2"}, {multi: true});
 
-			oms.find({}, function(error, docs) {
+			var cursor = oms.find({});
+			cursor.toArray(function(error, docs) {
 				if(error) {
 					throw new Error(error);
 				}
@@ -129,19 +133,21 @@ describe('Doc Update', function(){
 				}
 			}); // use defaults (localhost/test) as defined in defaults.js
 
-			oms.insert({object: "someval1" }, function(error, objectExtended) {
+			var doc = {object: "someval1"};
+			oms.insert(doc, function(error, writeResult) {
 				if(error)
 					throw error;
-				if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+				if(typeof doc != "object" || typeof doc._id == "undefined")
 					throw new Error("Invalid object returned by insert");
 
-				var id = objectExtended._id;
+				var id = doc._id;
 
 				oms.update(id, {object: "someval22"}, function(error, updated) {
 					if(error)
 						throw error;
 					else {
-						oms.find(id, function(error, results) {
+						var cursor = oms.find(id);
+						cursor.toArray(function(error, results) {
 							if(error)
 								throw error;
 							if(!results || results.length != 1)
@@ -151,7 +157,6 @@ describe('Doc Update', function(){
 							done();
 						});
 					}
-
 				});
 			});
 		});
@@ -167,19 +172,21 @@ describe('Doc Update', function(){
 				}
 			}); // use defaults (localhost/test) as defined in defaults.js
 
-			oms.insert({object: "someval1" }, function(error, objectExtended) {
+			var doc = {object: "someval1" };
+			oms.insert(doc, function(error, objectExtended) {
 				if(error)
 					throw error;
-				if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+				if(typeof doc != "object" || typeof doc._id == "undefined")
 					throw new Error("Invalid object returned by insert");
 
-				var id = objectExtended._id;
+				var id = doc._id;
 
 				oms.update(id, {object: "someval22"}, function(error, updated) {
 					if(error)
 						throw error;
 					else {
-						oms.find(id, function(error, results) {
+						var cursor = oms.find(id);
+						cursor.toArray(function(error, results) {
 							if(error)
 								throw error;
 							if(!results || results.length != 1)

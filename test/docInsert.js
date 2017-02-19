@@ -5,15 +5,16 @@ describe('Doc Insert', function(){
 		it('should return an _id when doc is inserted', function (done) {
 			var oms = require('../')({}); // use defaults (localhost/test) as defined in defaults.js
 
-			oms.insert({key: "someval1"}, function (error, object) {
+			var doc = {key: "someval1"};
+			oms.insert(doc, function (error, object) {
 				if (error)
 					throw error;
 				else {
-					var id = object._id;
-					oms.find({_id: id}, function (error, results) {
+					var id = doc._id;
+					oms.findOne({_id: id}, function (error, result) {
 						if (error)
 							throw error;
-						if (!results || results.length != 1)
+						if (!result || result._id != id)
 							throw new Error("inserted object '" + id + "' not found in DB");
 						done();
 					});
@@ -32,12 +33,13 @@ describe('Doc Insert', function(){
 				}
 			}); // use defaults (localhost/test) as defined in defaults.js
 
-			oms.insert({key: "someval1" }, function(error, object) {
+			var doc = {key: "someval1" };
+			oms.insert(doc, function(error, object) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
-					oms.find({_id: id}, function(error, results) {
+					var cursor = oms.find({_id: doc._id});
+					cursor.toArray(function(error, results) {
 						if(error)
 							throw error;
 						if(!results || results.length != 1)
@@ -48,6 +50,7 @@ describe('Doc Insert', function(){
 			});
 		});
 	});
+
 
 	describe('MongoLocal inserts doc', function() {
 		it('should trigger an error when a doc with existing _id is inserted', function (done) {
@@ -60,7 +63,7 @@ describe('Doc Insert', function(){
 				else {
 					var docClone = JSON.parse(JSON.stringify(doc));
 					oms.insert(docClone, function(error, writeResult) {
-						if (error.message == 'id_exists')
+						if (error == 'id_exists')
 							done();
 						else
 							throw new Error("Doesn't throw error on duplicate");

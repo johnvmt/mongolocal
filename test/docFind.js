@@ -16,12 +16,15 @@ describe('Doc Find', function(){
 		it('should insert a doc, then return it', function(done) {
 			var key = uniqueId();
 
-			oms.insert({key: key}, function(error, object) {
+			var doc = {key: key};
+			oms.insert(doc, function(error, object) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
-					oms.find({key: key}, function(error, results) {
+					var id = doc._id;
+					var cursor = oms.find({key: key});
+
+					cursor.toArray(function(error, results) {
 						if(error)
 							throw error;
 						if(!results || results.length != 1)

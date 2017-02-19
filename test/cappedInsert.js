@@ -3,7 +3,6 @@ var assert = require('assert');
 describe('Doc Insert', function(){
 	describe('Insert 11 docs, checking for length', function() {
 		it('should return an _id when doc is inserted', function (done) {
-
 			var collection = {};
 			var maxLength = 10;
 			var oms = require('../')({
@@ -28,13 +27,14 @@ describe('Doc Insert', function(){
 			if(Object.keys(collection).length != maxLength)
 				throw new Error("Wrong length");
 
-			oms.insert({key: "someval-capped"}, {emitCascade: true}, function (error, object) {
+			var doc = {key: "someval-capped"};
+			oms.insert(doc, {emitCascade: true}, function (error, writeResult) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
-					oms.find({}, function (error, results) {
-
+					var id = doc._id;
+					var cursor = oms.find({});
+					cursor.toArray(function(error, results) {
 						if (error)
 							throw error;
 						if (!results || results.length != maxLength)
@@ -77,12 +77,14 @@ describe('Doc Insert', function(){
 			if(Object.keys(collection).length != maxLength)
 				throw new Error("Wrong length");
 
-			oms.insert({key: "someval-capped"}, {emitCascade: false}, function (error, object) {
+			var doc = {key: "someval-capped"};
+			oms.insert(doc, {emitCascade: false}, function (error, writeResult) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
-					oms.find({}, function (error, results) {
+					var id = doc._id;
+					var cursor = oms.find({});
+					cursor.toArray(function(error, results) {
 						if (error)
 							throw error;
 						if (!results || results.length != maxLength)

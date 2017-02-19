@@ -26,13 +26,25 @@ IndexedLinkedList.prototype.remove = function(index) {
  * @param data
  */
 IndexedLinkedList.prototype.push = function(index, data) {
+
 	var item = this._resetIndex(index, data);
 
 	// Link it to the list
+	if(this.head != null)
+		this.head.prev = item;
+
 	item.prev = null;
 	item.next = this.head;
+
 	this.head = item;
+
+	if(this.length == 0)
+		this.tail = item;
+
+	// Change the list length
 	this.length++;
+
+
 };
 
 /**
@@ -44,9 +56,16 @@ IndexedLinkedList.prototype.enqueue = function(index, data) {
 	var item = this._resetIndex(index, data);
 
 	// Link it to the list
+	if(this.tail != null)
+		this.tail.next = item;
+
 	item.next = null;
 	item.prev = this.tail;
+
 	this.tail = item;
+
+	if(this.length == 0)
+		this.head = item;
 
 	// Change the list length
 	this.length++;

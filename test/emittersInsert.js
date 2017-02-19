@@ -26,10 +26,11 @@ describe('Doc Insert with Emitters', function(){
 				throw new Error("Emitter was triggered");
 			});
 
-			oms.insert({object: "someval1" }, {emit: false}, function(error, objectExtended) {
+			var doc = {object: "someval1"};
+			oms.insert(doc, {emit: false}, function(error, objectExtended) {
 				if(error)
 					throw error;
-				if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+				if(typeof doc != "object" || typeof doc._id == "undefined")
 					throw new Error("Invalid object returned by insert");
 
 				process.nextTick(function() {

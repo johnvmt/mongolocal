@@ -9,11 +9,12 @@ describe('Doc Remove with Emitters', function(){
 				done();
 			});
 
-			oms.insert({object: "someval1" }, function(error, object) {
+			var doc = {object: "someval1" };
+			oms.insert(doc, function(error, object) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
+					var id = doc._id;
 					oms.remove({_id: id}, function(error, success) {
 						if(error)
 							throw error;
@@ -28,11 +29,12 @@ describe('Doc Remove with Emitters', function(){
 				throw new Error("Callback was triggered");
 			});
 
-			oms.insert({object: "someval1" }, function(error, object) {
+			var doc = {object: "someval1"};
+			oms.insert(doc, function(error, object) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
+					var id = doc._id;
 					oms.remove({_id: id}, {emit: false}, function(error, success) {
 						if(error)
 							throw error;
@@ -60,11 +62,12 @@ describe('Doc Remove with Emitters', function(){
 				done();
 			});
 
-			oms.insert({object: "someval1" }, function(error, object) {
+			var doc = {object: "someval1"}
+			oms.insert(doc, function(error, object) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
+					var id = doc._id;
 					oms.remove({_id: id}, function(error, success) {
 						if(error)
 							throw error;
@@ -86,11 +89,12 @@ describe('Doc Remove with Emitters', function(){
 				throw new Error("Callback was triggered");
 			});
 
-			oms.insert({object: "someval1" }, function(error, object) {
+			var doc = {object: "someval1"}
+			oms.insert(doc, function(error, object) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
+					var id = doc._id;
 					oms.remove({_id: id}, {emit: false}, function(error, success) {
 						if(error)
 							throw error;

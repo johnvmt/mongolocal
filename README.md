@@ -8,49 +8,14 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
-### Version 1.1.6 ###
+### Version 1.2.0 ###
 
-* Inserting doc with id that's already in collection triggers error
+* Find now returns cursor, rather than accepting callback
+* WARNING: This version's find function is incompatible with preview versions
 
-### Version 1.1.5 ###
+### Previous versions ###
 
-* Fixed update validation bug
-
-### Version 1.1.4 ###
-
-* Fixed a bug introduced in 1.1.3 that caused callbacks to be called twice in findOne
-
-### Version 1.1.3 ###
-
-* Fixed bug in findOne that caused it to not return when result set was null
-
-### Version 1.1.2 ###
-
-* Added upsert option to update function
-
-### Version 1.1.1 ###
-
-* Events now emit options as last argument
-
-### Version 1.1.0 ###
-
-* Added findOne function
-* Update function now defaults to updating a single doc (use multi option to update many)
-
-### Version 1.0.2 ###
-
-* Corrected bug to speed up searching by index in an Object-based collection
- 
-### Version 1.0.1 ###
- 
-* Added cascadeEmit option so that inserting into a capped collection can trigger or not trigger a removal event
-* Uses indexed linked list to store capped IDs, to reduce removal time on long lists
-
-
-### Version 1.0.0 ###
-
-* Update function defined in config now takes arguments: (index, originalDoc, updatedDoc)
-* Added event emitter on insert, update, remove
+[Docs on Github](https://github.com/johnvmt/mongolocal/tree/1.1.6)
 
 ## Installation ##
 
@@ -96,7 +61,8 @@ NOTE: This project is not affiliated with MongoDB
 	
 ### Find documents ###
 
-	collection.find({key: "val"}, function(error, results) {
+	var cursor = collection.find({key: "val"});
+	cursor.toArray(function(error, results) {
 		if(error)
 			console.error("Something went wrong");
 		else {
@@ -108,7 +74,8 @@ NOTE: This project is not affiliated with MongoDB
 	
 ### Insert document ###
 
-	collection.insert({key: "someval1"}, function (error, doc) {
+	var doc = {key: "val1"};
+	collection.insert(doc, function (error, writeOp) {
 		if(error)
 			console.error("Something went wrong");
 		else
@@ -117,12 +84,13 @@ NOTE: This project is not affiliated with MongoDB
 	
 ### Update document ###
 
-	collection.insert({key: "val1" }, function(error, doc) {
+	var doc = {key: "someval1"};
+    collection.insert(doc, function (error, writeOp) {
 		if(error)
 			console.error("Something went wrong on insertion");
 		else {
-			var id = objectExtended._id;
-			oms.update(id, {key: "val2"}, function(error, success) {
+			var id = doc._id;
+			collection.update({_id: id}, {key: "val2"}, function(error, success) {
 				if(error)
 					console.error("Something went wrong on update");
 				else
@@ -133,12 +101,13 @@ NOTE: This project is not affiliated with MongoDB
 
 ### Remove document ###
 
-	collection.insert({key: "val1" }, function(error, doc) {
+	var doc = {key: "someval1"};
+	collection.insert(doc, function (error, writeOp) {
 		if(error)
 			console.error("Something went wrong on insertion");
 		else {
-			var id = objectExtended._id;
-			oms.remove(id, function(error, success) {
+			var id = doc._id;
+			collection.remove(id, function(error, success) {
 				if(error)
 					console.error("Something went wrong on removal");
 				else
@@ -164,7 +133,8 @@ Potentially useful when the collection is managed by some other software (eg: an
 		}
 	});
 
-	collection.insert({key: "someval1" }, function(error, doc) {
+	var doc = {key: "val1"}
+	collection.insert(doc, function(error, writeResult) {
 		if(error)
 			throw error;
 		else
@@ -182,13 +152,14 @@ Potentially useful when the collection is managed by some other software (eg: an
 		}
 	});
 
-	collection.insert({key: "someval1" }, function(error, doc) {
+	var doc = {key: "val1"}
+	collection.insert(doc, function(error, writeResult) {
 		if(error)
 			throw error;
 
 		var id = doc._id;
 
-		collection.update(id, {key: "someval22"}, function(error, updated) {
+		collection.update({_id: id}, {key: "someval22"}, function(error, updated) {
 			if(error)
 				throw error;
 			else
@@ -207,11 +178,12 @@ Potentially useful when the collection is managed by some other software (eg: an
 		}
 	});
 
-	collection.insert({key: "someval1" }, function(error, object) {
+	var doc = {key: "val1"}
+	collection.insert(doc, function(error, writeResult) {
 		if(error)
 			throw error;
 		else {
-			var id = object._id;
+			var id = doc._id;
 			collection.remove({_id: id}, function(error, success) {
 				if(error)
 					throw error;

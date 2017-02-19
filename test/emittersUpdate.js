@@ -9,13 +9,14 @@ describe('Doc Update with Emitters', function(){
 				done();
 			});
 
-			oms.insert({object: "someval1" }, function(error, objectExtended) {
+			var doc = {object: "someval1"};
+			oms.insert(doc, function(error, writeResult) {
 				if(error)
 					throw error;
-				if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+				if(typeof doc != "object" || typeof doc._id == "undefined")
 					throw new Error("Invalid object returned by insert");
 
-				var id = objectExtended._id;
+				var id = doc._id;
 
 				oms.update(id, {object: "someval22"}, function(error, docDiffs) {
 					if(error)
@@ -40,20 +41,23 @@ describe('Doc Update with Emitters', function(){
 				throw new Error("Emitter was triggered")
 			});
 
-			oms.insert({object: "someval1" }, function(error, objectExtended) {
+
+			var doc = {object: "someval1"};
+			oms.insert(doc, function(error, writeResult) {
 				if(error)
 					throw error;
-				if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+				if(typeof doc != "object" || typeof doc._id == "undefined")
 					throw new Error("Invalid object returned by insert");
 
-				var id = objectExtended._id;
+				var id = doc._id;
 
 				oms.update(id, {object: "someval22"}, {emit: false}, function(error, docDiffs) {
 
 					if(error)
 						throw error;
 					else {
-						oms.find(id, function(error, results) {
+						var cursor = oms.find(id);
+						cursor.toArray(function(error, results) {
 							if(error)
 								throw error;
 							if(!results || results.length != 1)
@@ -85,13 +89,14 @@ describe('Doc Update with Emitters', function(){
 				done();
 			});
 
-			oms.insert({object: "someval1" }, function(error, objectExtended) {
+			var doc = {object: "someval1"};
+			oms.insert(doc, function(error, writeResult) {
 				if(error)
 					throw error;
-				if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+				if(typeof doc != "object" || typeof doc._id == "undefined")
 					throw new Error("Invalid object returned by insert");
 
-				var id = objectExtended._id;
+				var id = doc._id;
 
 				oms.update(id, {object: "someval22"}, function(error, updated) {
 					if(error)
@@ -123,19 +128,21 @@ describe('Doc Update with Emitters', function(){
 				throw new Error("emitter was triggered");
 			});
 
-			oms.insert({object: "someval1" }, function(error, objectExtended) {
+			var doc = {object: "someval1"};
+			oms.insert(doc, function(error, writeResult) {
 				if(error)
 					throw error;
-				if(typeof objectExtended != "object" || typeof objectExtended._id == "undefined")
+				if(typeof doc != "object" || typeof doc._id == "undefined")
 					throw new Error("Invalid object returned by insert");
 
-				var id = objectExtended._id;
+				var id = doc._id;
 
 				oms.update(id, {object: "someval22"}, {emit: false}, function(error, updated) {
 					if(error)
 						throw error;
 					else {
-						oms.find(id, function(error, results) {
+						var cursor = oms.find(id);
+						cursor.toArray(function(error, results) {
 							if(error)
 								throw error;
 							if(!results || results.length != 1)

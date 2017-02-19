@@ -2,6 +2,7 @@ var FauxMongo = require('fauxmongo');
 var ObjectId = require('objectid');
 var EventEmitter = require('wolfy87-eventemitter');
 var Utils = require('./Utils');
+var MongoLocalCursor = require('./MongoLocalCursor');
 var IndexedLinkedList = require('./IndexedLinkedList');
 
 function MongoLocal(config) {
@@ -10,34 +11,80 @@ function MongoLocal(config) {
 
 	this.config = config;
 	this.collection = (typeof this.config.collection == 'object' || Array.isArray(this.config.collection)) ? this.config.collection : {};
-	this._cappedDocs = IndexedLinkedList();
+	this._docsLinkedList = IndexedLinkedList();
 }
 
 MongoLocal.prototype.__proto__ = EventEmitter.prototype;
 
 MongoLocal.prototype.find = function() {
 	// https://docs.mongodb.com/v3.0/reference/method/db.collection.find/
-	// [query,] [projection,] [callback]
+	// [query,] [projection]
+	var mongolocal = this;
+
 	var parsedArgs = Utils.parseArgs(
 		arguments,
 		[
 			{name: 'query', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object' || typeof(arg) == 'string'; }, default: {}},
-			{name: 'projection', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }},
-			{name: 'callback', level: 0, validate: function(arg, allArgs) { return typeof(arg) === 'function'; }}
+			{name: 'projection', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }}
 		]
 	);
 
-	var result = [];
-	try {
-		this._findForEach(parsedArgs.query, function (doc) {
-			result.push(doc);
-		});
+	var query = mongolocal._validateQuery(parsedArgs.query);
 
-		// TODO projection
-		parsedArgs.callback(null, result);
+	// Set the starting positions
+	var index, currentNode, returnedOne;
+	rewindResults();
+
+	return MongoLocalCursor(peekResult, nextResult, rewindResults);
+
+	// Return the next result without advancing the cursor
+	function peekResult() {
+		if(Array.isArray(mongolocal.collection)) {
+			while(!returnedOne && index < mongolocal.collection.length) {
+				var result = {index: index, doc: mongolocal.collection[index]};
+				if(mongolocal._docFilter(result.doc, query)) // doc matches
+					return result;
+				else
+					index++; // Cursor will not advance if result is returned
+			}
+			return null;
+		}
+		else {
+			if(Object.keys(query).length == 1 && typeof query._id != 'undefined') // Looking for single doc, by index
+				return (typeof mongolocal.collection[query._id] != 'undefined' && !returnedOne) ? {index: query._id, doc: mongolocal.collection[query._id]} : null;
+			else {
+				while(currentNode != null) {
+					var result = {index: currentNode.data, doc: mongolocal.collection[currentNode.data]};
+					if(mongolocal._docFilter(result.doc, query)) // doc matched
+						return result;
+					else
+						currentNode = currentNode.next; // Will not be triggered if result is returned
+				}
+				return null; // Reached end of collection
+			}
+		}
 	}
-	catch(error) {
-		parsedArgs.callback(error, null);
+
+	// Return the next result and advance the cursor
+	function nextResult() {
+		var result = peekResult();
+
+		if(Object.keys(query).length == 1 && typeof query._id != 'undefined') // Looking for single doc, by index
+			returnedOne = true;
+		if(Array.isArray(mongolocal.collection))
+			index++;
+		else if(currentNode != null)
+			currentNode = currentNode.next;
+
+		return result;
+	}
+
+	function rewindResults() {
+		returnedOne = false;
+		if(Array.isArray(mongolocal.collection))
+			index = 0;
+		else
+			currentNode = mongolocal._docsLinkedList.head;
 	}
 };
 
@@ -54,21 +101,9 @@ MongoLocal.prototype.findOne = function() {
 		]
 	);
 
-	var BreakException = {};
-	var result = undefined;
-	try {
-		this._findForEach(parsedArgs.query, function (doc) {
-			result = doc;
-			throw BreakException; // break out of loop
-		});
-		parsedArgs.callback(null, null);
-	}
-	catch(error) {
-		if(error == BreakException)
-			parsedArgs.callback(null, result);
-		else
-			parsedArgs.callback(error, null);
-	}
+	this.find(parsedArgs.query, parsedArgs.projection).next(function(error, doc) {
+		parsedArgs.callback(error, doc);
+	});
 };
 
 /**
@@ -94,15 +129,26 @@ MongoLocal.prototype.insert = function() {
 	var options = Utils.objectMerge({emit: true}, parsedArgs.options);
 	options = Utils.objectMerge({emitCascade: options.emit}, options); // add emitCascade option
 
-	try {
-		if (Array.isArray(parsedArgs.docs)) // insert multiple docs
-			parsedArgs.docs.forEach(insertDocSafe);
-		else // insert single doc
-			insertDocSafe(parsedArgs.docs);
-		callbackSafe(null, parsedArgs.docs);
+	if (Array.isArray(parsedArgs.docs)) {// insert multiple docs
+		var continueInsert = true; // TODO add option to continue on error
+		parsedArgs.docs.forEach(function (doc) {
+			insertDocSafe(doc, function (error) {
+				if (error) {
+					continueInsert = false;
+					callbackSafe(error);
+				}
+			});
+		});
+		if (continueInsert)
+			callbackSafe(null, null);
 	}
-	catch(error) {
-		callbackSafe(error, null);
+	else {// insert single doc
+		insertDocSafe(parsedArgs.docs, function (error) {
+			if (error)
+				callbackSafe(error, null);
+			else
+				callbackSafe(null, null);
+		});
 	}
 
 	function callbackSafe(error, result) {
@@ -110,24 +156,24 @@ MongoLocal.prototype.insert = function() {
 			parsedArgs.callback(error, result);
 	}
 
-	function insertDocSafe(doc) {
+	function insertDocSafe(doc, callback) {
 		if(typeof doc._id == 'undefined') {
 			doc._id = ObjectId();
-			insertDoc(doc);
+			insertDoc(doc, callback);
 		}
 		else {
 			mongolocal.findOne({_id: doc._id}, function(error, result) {
 				if(error)
-					throw new Error('find_error');
+					callback('find_error');
 				else if(result != null)
-					throw new Error('id_exists');
+					callback('id_exists');
 				else
-					insertDoc(doc);
+					insertDoc(doc, callback);
 			});
 		}
 	}
 
-	function insertDoc(doc) {
+	function insertDoc(doc, callback) {
 		// TODO duplicate docs before adding _id? Check mongo spec
 		if(typeof mongolocal.config.insert == 'function') // override is set (for Polymer)
 			mongolocal.config.insert(doc);
@@ -140,6 +186,8 @@ MongoLocal.prototype.insert = function() {
 
 		if(options.emit)
 			mongolocal.emit('insert', doc, options);
+
+		callback(null);
 	}
 };
 
@@ -173,7 +221,9 @@ MongoLocal.prototype.update = function() {
 
 	try {
 		var numUpdated = 0;
-		this._findForEach(parsedArgs.query, function (doc, index) {
+
+		var findCursor = this.find(parsedArgs.query);
+		findCursor._forEachDocIndex(function(doc, index) {
 			numUpdated++;
 			if (options.emit)
 				var unmodifiedDoc = mongolocal._cloneObject(doc);
@@ -234,8 +284,7 @@ MongoLocal.prototype.remove = function() {
 	var mongolocal = this;
 
 	var query = mongolocal._validateQuery(parsedArgs.query);
-
-		mongolocal._findForEach(query, function(doc, index) {
+	mongolocal.find(query)._forEachDocIndex(function(doc, index) {
 		if(options.emit)
 			var docClone = mongolocal._cloneObject(doc);
 
@@ -309,40 +358,6 @@ MongoLocal.prototype._updateDoc = function(doc, updateOperations, clone) {
 	return doc;
 };
 
-MongoLocal.prototype._findForEach = function() {
-	// [query,] [options], callback
-	var parsedArgs = Utils.parseArgs(
-		arguments,
-		[
-			{name: 'query', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object' || typeof(arg) == 'string'; }, default: {}},
-			{name: 'options', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }},
-			{name: 'callback', level: 0, validate: function(arg, allArgs) { return typeof(arg) == 'function'; }}
-		]
-	);
-
-	var mongolocal = this;
-
-	var query = mongolocal._validateQuery(parsedArgs.query);
-
-	if(Array.isArray(this.collection)) {// collection is an array
-		this.collection.forEach(docFilter);
-	}
-	else { // collection is an object
-
-		if(Object.keys(query).length == 1 && typeof query._id != 'undefined') { // collection is an object, looking for doc by index
-			if (typeof this.collection[query._id]) // doc exists
-				parsedArgs.callback(this.collection[query._id], query._id);
-		}
-		else // collection is an object, complex query
-			Utils.objectForEach(this.collection, docFilter);
-	}
-
-	function docFilter(doc, index) {
-		if(mongolocal._docFilter(doc, query))
-			parsedArgs.callback(doc, index)
-	}
-};
-
 MongoLocal.prototype._docFilter = function(doc, query) {
 	return FauxMongo.matchQuery(doc, query);
 };
@@ -351,18 +366,21 @@ MongoLocal.prototype._cappedInsert = function(docId, emit) {
 	if(typeof emit != 'boolean')
 		emit = true;
 
-	if(this.isCapped()) {
-		this._cappedDocs.push(docId, docId); // add to cap index
+	// Maintain list when collection is capped or cannot asynchronously iterate over docs
+	if(this.isCapped() || !Array.isArray(this.collection))
+		this._docsLinkedList.enqueue(docId, docId); // add to cap index
 
-		while(this._cappedDocs.length > this.config.max) {
-			this.remove(this._cappedDocs.dequeue(), {emit: emit});
+	if(this.isCapped()) {
+
+		while(this._docsLinkedList.length > this.config.max) {
+			this.remove(this._docsLinkedList.dequeue(), {emit: emit});
 		}
 	}
 };
 
 MongoLocal.prototype._cappedRemove = function(docId) {
 	try {
-		this._cappedDocs.remove(docId);
+		this._docsLinkedList.remove(docId);
 	}
 	catch(error) {
 		if(error.message != 'undefined_item')

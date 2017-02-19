@@ -5,11 +5,12 @@ describe('Doc Removal', function(){
 		it('should insert a doc, then delete it', function(done) {
 			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
 
-			oms.insert({object: "someval1" }, function(error, object) {
+			var doc = {object: "someval1" };
+			oms.insert(doc, function(error, writeResult) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
+					var id = doc._id;
 					oms.remove({_id: id}, function(error, success) {
 						if(error)
 							throw error;
@@ -31,11 +32,12 @@ describe('Doc Removal', function(){
 				}
 			});
 
-			oms.insert({object: "someval1" }, function(error, object) {
+			var doc = {object: "someval1" };
+			oms.insert(doc, function(error, writeResult) {
 				if(error)
 					throw error;
 				else {
-					var id = object._id;
+					var id = doc._id;
 					oms.remove({_id: id}, function(error, success) {
 						if(error)
 							throw error;
