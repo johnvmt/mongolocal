@@ -13,7 +13,7 @@ function uniqueId() {
 
 describe('Doc Find', function(){
 	describe('Database doc', function(){
-		it('should insert a doc, then return it', function(done) {
+		it('should insert a doc, then return it, using returned cursor', function(done) {
 			var key = uniqueId();
 
 			var doc = {key: key};
@@ -30,6 +30,28 @@ describe('Doc Find', function(){
 						if(!results || results.length != 1)
 							throw new Error("inserted object '" + key + "' not found in DB");
 						done();
+					});
+				}
+			});
+		});
+
+		it('should insert a doc, then return it, using callback cursor', function(done) {
+			var key = uniqueId();
+
+			var doc = {key: key};
+			oms.insert(doc, function(error, object) {
+				if(error)
+					throw error;
+				else {
+					var id = doc._id;
+					oms.find({key: key}, function(error, cursor) {
+						cursor.toArray(function(error, results) {
+							if(error)
+								throw error;
+							if(!results || results.length != 1)
+								throw new Error("inserted object '" + key + "' not found in DB");
+							done();
+						});
 					});
 				}
 			});

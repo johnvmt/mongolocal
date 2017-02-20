@@ -25,7 +25,8 @@ MongoLocal.prototype.find = function() {
 		arguments,
 		[
 			{name: 'query', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object' || typeof(arg) == 'string'; }, default: {}},
-			{name: 'projection', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }}
+			{name: 'projection', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'object'; }},
+			{name: 'callback', level: 1, validate: function(arg, allArgs) { return typeof(arg) == 'function'; }}
 		]
 	);
 
@@ -35,7 +36,10 @@ MongoLocal.prototype.find = function() {
 	var index, currentNode, returnedOne;
 	rewindResults();
 
-	return MongoLocalCursor(peekResult, nextResult, rewindResults);
+	var cursor = MongoLocalCursor(peekResult, nextResult, rewindResults);
+	if(typeof parsedArgs.callback == 'function')
+		parsedArgs.callback(null, cursor);
+	return cursor;
 
 	// Return the next result without advancing the cursor
 	function peekResult() {

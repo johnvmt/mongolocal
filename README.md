@@ -8,10 +8,9 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
-### Version 1.2.0 ###
+### Version 1.2.1 ###
 
-* Find now returns cursor, rather than accepting callback
-* WARNING: This version's find function is incompatible with preview versions
+* Find now returns cursor, in addition to accepting callback
 
 ### Previous versions ###
 

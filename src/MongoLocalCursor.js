@@ -18,8 +18,6 @@ MongoLocalCursor.prototype.rewind = function(callback) {
 };
 
 MongoLocalCursor.prototype.forEach = function(callback) {
-	// cursor.each(function(err, doc){}) retrieves all matching records one by one.
-
 	this._forEachDocIndex(function(error, doc) {
 		callback(doc);
 	});
