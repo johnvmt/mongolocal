@@ -18,7 +18,7 @@ MongoLocalCursor.prototype.rewind = function(callback) {
 };
 
 MongoLocalCursor.prototype.forEach = function(callback) {
-	this._forEachDocIndex(function(error, doc) {
+	this._forEachDocIndex(function(doc) {
 		callback(doc);
 	});
 };

@@ -8,6 +8,10 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.2.2 ###
+
+* Fixed bug in cursor's forEach function
+
 ### Version 1.2.1 ###
 
 * Find now returns cursor, in addition to accepting callback
