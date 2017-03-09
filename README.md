@@ -8,6 +8,11 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.2.3 ###
+
+* Made docsLinkedList attribute public, made docsLinkedList's list attribute public
+* Added tests to test sending arbitrary tags through options argument of insert/update/remove
+
 ### Version 1.2.2 ###
 
 * Fixed bug in cursor's forEach function

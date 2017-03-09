@@ -2,6 +2,32 @@ var assert = require('assert');
 
 describe('Doc Remove with Emitters', function(){
 	describe('MongoLocal performs removal', function(){
+		it('should pass through tag when doc is removed', function(done) {
+			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
+
+			var emitTagTest = "myteststring";
+
+			oms.on('remove', function(doc, options) {
+				if(options.emitTag == emitTagTest)
+					done();
+				else
+					throw new Error("Wrong emit tag");
+			});
+
+			var doc = {object: "someval1" };
+			oms.insert(doc, function(error, object) {
+				if(error)
+					throw error;
+				else {
+					var id = doc._id;
+					oms.remove({_id: id}, {emitTag: emitTagTest}, function(error, success) {
+						if(error)
+							throw error;
+					});
+				}
+			});
+		});
+
 		it('should trigger emitter when doc is removed', function(done) {
 			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
 
@@ -62,7 +88,7 @@ describe('Doc Remove with Emitters', function(){
 				done();
 			});
 
-			var doc = {object: "someval1"}
+			var doc = {object: "someval1"};
 			oms.insert(doc, function(error, object) {
 				if(error)
 					throw error;
@@ -76,6 +102,7 @@ describe('Doc Remove with Emitters', function(){
 				}
 			});
 		});
+
 		it('should not trigger emitter when doc is inserted', function(done) {
 			var collection = [];
 			var oms = require('../')({

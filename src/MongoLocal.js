@@ -11,7 +11,7 @@ function MongoLocal(config) {
 
 	this.config = config;
 	this.collection = (typeof this.config.collection == 'object' || Array.isArray(this.config.collection)) ? this.config.collection : {};
-	this._docsLinkedList = IndexedLinkedList();
+	this.docsLinkedList = IndexedLinkedList();
 }
 
 MongoLocal.prototype.__proto__ = EventEmitter.prototype;
@@ -88,7 +88,7 @@ MongoLocal.prototype.find = function() {
 		if(Array.isArray(mongolocal.collection))
 			index = 0;
 		else
-			currentNode = mongolocal._docsLinkedList.head;
+			currentNode = mongolocal.docsLinkedList.head;
 	}
 };
 
@@ -372,19 +372,19 @@ MongoLocal.prototype._cappedInsert = function(docId, emit) {
 
 	// Maintain list when collection is capped or cannot asynchronously iterate over docs
 	if(this.isCapped() || !Array.isArray(this.collection))
-		this._docsLinkedList.enqueue(docId, docId); // add to cap index
+		this.docsLinkedList.enqueue(docId, docId); // add to cap index
 
 	if(this.isCapped()) {
 
-		while(this._docsLinkedList.length > this.config.max) {
-			this.remove(this._docsLinkedList.dequeue(), {emit: emit});
+		while(this.docsLinkedList.length > this.config.max) {
+			this.remove(this.docsLinkedList.dequeue(), {emit: emit});
 		}
 	}
 };
 
 MongoLocal.prototype._cappedRemove = function(docId) {
 	try {
-		this._docsLinkedList.remove(docId);
+		this.docsLinkedList.remove(docId);
 	}
 	catch(error) {
 		if(error.message != 'undefined_item')

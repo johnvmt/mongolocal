@@ -1,5 +1,5 @@
 function IndexedLinkedList() {
-	this._list = {};
+	this.list = {};
 	this.length = 0;
 	this.head = null;
 	this.tail = null;
@@ -17,7 +17,7 @@ IndexedLinkedList.prototype.dequeue = function() {
  * @param index
  */
 IndexedLinkedList.prototype.remove = function(index) {
-	this._removeItem(this._list[index]);
+	this._removeItem(this.list[index]);
 };
 
 /**
@@ -95,17 +95,17 @@ IndexedLinkedList.prototype._resetIndex = function(index, data) {
  * @private
  */
 IndexedLinkedList.prototype._set = function(index, data) {
-	if(typeof this._list[index] == 'object') // item already exists
-		this._list[index].data = data;
+	if(typeof this.list[index] == 'object') // item already exists
+		this.list[index].data = data;
 	else {
-		this._list[index] = {
+		this.list[index] = {
 			data: data,
 			next: undefined,
 			prev: undefined
 		}
 	}
 
-	return this._list[index];
+	return this.list[index];
 };
 
 /**
