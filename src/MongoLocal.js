@@ -375,9 +375,9 @@ MongoLocal.prototype._cappedInsert = function(docId, emit) {
 		this.docsLinkedList.enqueue(docId, docId); // add to cap index
 
 	if(this.isCapped()) {
-
 		while(this.docsLinkedList.length > this.config.max) {
-			this.remove(this.docsLinkedList.dequeue(), {emit: emit});
+			var _id = this.docsLinkedList.head.data;
+			this.remove(_id, {emit: emit});
 		}
 	}
 };

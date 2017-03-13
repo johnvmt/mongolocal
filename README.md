@@ -8,6 +8,10 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.2.4 ###
+
+* Fixed bug in capped insert function
+
 ### Version 1.2.3 ###
 
 * Made docsLinkedList attribute public, made docsLinkedList's list attribute public

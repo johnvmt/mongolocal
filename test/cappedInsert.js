@@ -50,6 +50,7 @@ describe('Doc Insert', function(){
 		});
 	});
 
+
 	describe('Insert docs, not triggering removal emitter', function() {
 		it('should return an _id when doc is inserted', function (done) {
 
