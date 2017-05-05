@@ -300,10 +300,10 @@ MongoLocal.prototype.remove = function() {
 		else
 			delete mongolocal.collection[index];
 
+		mongolocal._cappedRemove(docId);
+
 		if(options.emit)
 			mongolocal.emit('remove', docClone, options);
-
-		mongolocal._cappedRemove(docId);
 	});
 
 	if(typeof parsedArgs.callback == 'function')
