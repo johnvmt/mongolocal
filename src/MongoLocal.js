@@ -229,20 +229,21 @@ MongoLocal.prototype.update = function() {
 		var findCursor = this.find(parsedArgs.query);
 		findCursor._forEachDocIndex(function(doc, index) {
 			numUpdated++;
-			if (options.emit)
+
+			if(options.emit)
 				var unmodifiedDoc = mongolocal._cloneObject(doc);
 
-			if (typeof mongolocal.config.update == 'function') {// override is set (for Polymer)
+			if(typeof mongolocal.config.update == 'function') {// override is set (for Polymer)
 				var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, true);
 				mongolocal.config.update(index, unmodifiedDoc, modifiedDoc);
 			}
 			else
 				var modifiedDoc = mongolocal._updateDoc(doc, updateOperations, false);
 
-			if (options.emit)
+			if(options.emit)
 				mongolocal.emit('update', unmodifiedDoc, modifiedDoc, updateOperations, options);
 
-			if (!options.multi)
+			if(!options.multi)
 				throw BreakException;
 		});
 
@@ -265,7 +266,7 @@ MongoLocal.prototype.update = function() {
 	}
 
 	// TODO return WriteResult: https://docs.mongodb.com/v3.0/reference/method/db.collection.update/#writeresults-update
-	if(typeof parsedArgs.callback == 'function' && numUpdated && !options.upsert)
+	if(typeof parsedArgs.callback == 'function' && !(!numUpdated && options.upsert))
 		parsedArgs.callback(null, true);
 };
 
