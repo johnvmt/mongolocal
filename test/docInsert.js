@@ -31,7 +31,7 @@ describe('Doc Insert', function(){
 				insert: function(doc) {
 					collection.push(doc);
 				}
-			}); // use defaults (localhost/test) as defined in defaults.js
+			});
 
 			var doc = {key: "someval1" };
 			oms.insert(doc, function(error, object) {

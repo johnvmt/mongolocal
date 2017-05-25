@@ -33,7 +33,7 @@ MongoLocal.prototype.find = function() {
 	var query = mongolocal._validateQuery(parsedArgs.query);
 
 	// Set the starting positions
-	var index, currentNode, returnedOne;
+	var index, currentNode, returnedOne, lastResultDoc;
 	rewindResults();
 
 	var cursor = MongoLocalCursor(peekResult, nextResult, rewindResults);
@@ -44,10 +44,14 @@ MongoLocal.prototype.find = function() {
 	// Return the next result without advancing the cursor
 	function peekResult() {
 		if(Array.isArray(mongolocal.collection)) {
+			if(index > 0 && lastResultDoc != mongolocal.collection[index]) // Collection was changed (probably doc was deleted); try reversing
+				index--;
 			while(!returnedOne && index < mongolocal.collection.length) {
 				var result = {index: index, doc: mongolocal.collection[index]};
-				if(mongolocal._docFilter(result.doc, query)) // doc matches
+				if(mongolocal._docFilter(result.doc, query)) { // doc matches
+					lastResultDoc = result.doc;
 					return result;
+				}
 				else
 					index++; // Cursor will not advance if result is returned
 			}
@@ -75,8 +79,10 @@ MongoLocal.prototype.find = function() {
 
 		if(Object.keys(query).length == 1 && typeof query._id != 'undefined') // Looking for single doc, by index
 			returnedOne = true;
-		if(Array.isArray(mongolocal.collection))
+		if(Array.isArray(mongolocal.collection)) {// TODO check if
 			index++;
+			lastResultDoc = mongolocal.collection[index];
+		}
 		else if(currentNode != null)
 			currentNode = currentNode.next;
 

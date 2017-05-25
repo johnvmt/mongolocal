@@ -1,7 +1,7 @@
 var assert = require('assert');
 
 describe('Doc Removal', function(){
-	describe('MongoLocal performs removal', function(){
+	describe('MongoLocal performs removal on object', function(){
 		it('should insert a doc, then delete it', function(done) {
 			var oms = require('../')(); // use defaults (localhost/test) as defined in defaults.js
 
@@ -18,6 +18,50 @@ describe('Doc Removal', function(){
 					});
 				}
 			});
+		});
+	});
+
+	describe('MongoLocal performs removal on array', function(){
+		it('should insert a doc, then delete it', function(done) {
+
+			var collection = [];
+			var oms = require('../')({
+				collection: collection
+			});
+
+			for(var ctr = 0; ctr < 10; ctr++) {
+				oms.insert({key: "val", tag: ctr});
+			}
+
+			oms.remove({});
+
+			if(collection.length == 0)
+				done();
+			else
+				throw new Error("Items still in collection")
+
+		});
+	});
+
+	describe('MongoLocal performs removal on array', function(){
+		it('should insert a doc, then delete it', function(done) {
+
+			var collection = [];
+			var oms = require('../')({
+				collection: collection
+			});
+
+			for(var ctr = 0; ctr < 10; ctr++) {
+				oms.insert({key: "val", tag: ctr % 2});
+			}
+
+			oms.remove({tag: 0});
+
+			if(collection.length == 5)
+				done();
+			else
+				throw new Error("Wrong number of items in collection")
+
 		});
 	});
 
@@ -84,6 +128,4 @@ describe('Doc Removal', function(){
 			});
 		});
 	});
-
-
 });

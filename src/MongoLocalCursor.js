@@ -59,12 +59,11 @@ MongoLocalCursor.prototype._forEachDocIndex = function(callback) {
 MongoLocalCursor.prototype._nextDocIndex = function(callback) {
 	// https://mongodb.github.io/node-mongodb-native/markdown-docs/queries.html#nextobject
 	// cursor.nextObject(function(err, doc){}) retrieves the next record from database. If doc is null, then there weren’t any more records.
-
-		var result = this._nextResult();
-		if(result == null)
-			callback(null, null, null);
-		else
-			callback(null, result.doc, result.index);
+	var result = this._nextResult();
+	if(result == null)
+		callback(null, null, null);
+	else
+		callback(null, result.doc, result.index);
 };
 
 
