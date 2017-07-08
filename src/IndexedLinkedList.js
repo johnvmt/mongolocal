@@ -43,8 +43,6 @@ IndexedLinkedList.prototype.push = function(index, data) {
 
 	// Change the list length
 	this.length++;
-
-
 };
 
 /**

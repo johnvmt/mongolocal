@@ -12,6 +12,10 @@ MongoLocalCursor.prototype.next = function(callback) {
 	});
 };
 
+MongoLocalCursor.prototype.hasNext = function(callback) {
+	callback(null, this._peekResult() == null);
+};
+
 MongoLocalCursor.prototype.rewind = function(callback) {
 	// cursor.rewind() resets the internal pointer in the cursor to the beginning
 	this._rewindResults();

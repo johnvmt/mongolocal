@@ -1,6 +1,5 @@
 var assert = require('assert');
 
-
 describe('Doc FindOne', function(){
 	describe('Database doc', function(){
 		it('should insert 10 docs, then find the first one', function(done) {
@@ -21,7 +20,7 @@ describe('Doc FindOne', function(){
 		});
 	});
 
-	/* describe('Database doc', function(){
+	describe('Database doc', function(){
 		it('findOne with empty result', function(done) {
 			var oms = require('../')();
 
@@ -32,5 +31,5 @@ describe('Doc FindOne', function(){
 					done();
 			});
 		});
-	}); */
+	});
 });
