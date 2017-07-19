@@ -13,7 +13,7 @@ MongoLocalCursor.prototype.next = function(callback) {
 };
 
 MongoLocalCursor.prototype.hasNext = function(callback) {
-	callback(null, this._peekResult() == null);
+	callback(null, this._peekResult() != null);
 };
 
 MongoLocalCursor.prototype.rewind = function(callback) {

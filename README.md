@@ -8,6 +8,10 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.2.10 ###
+
+* Fixed bug in cursor's hasNext function
+
 ### Version 1.2.9 ###
 
 * Added option to generate _id using external function
