@@ -58,7 +58,7 @@ MongoLocal.prototype.find = function() {
 			return null;
 		}
 		else {
-			if(Object.keys(query).length == 1 && typeof query._id != 'undefined') // Looking for single doc, by index
+			if(Object.keys(query).length == 1 && (typeof query._id == 'string' || typeof query._id == 'number')) // Looking for single doc, by index
 				return (typeof mongolocal.collection[query._id] != 'undefined' && !returnedOne) ? {index: query._id, doc: mongolocal.collection[query._id]} : null;
 			else {
 				while(currentNode != null) {
@@ -168,7 +168,7 @@ MongoLocal.prototype.insert = function() {
 
 	function insertDocSafe(doc, callback) {
 		if(typeof doc._id == 'undefined') {
-			doc._id = ObjectId();
+			doc._id = mongolocal._objectId();
 			insertDoc(doc, callback);
 		}
 		else {
@@ -398,6 +398,10 @@ MongoLocal.prototype._cappedRemove = function(docId) {
 			throw error;
 	}
 };
+
+MongoLocal.prototype._objectId = function() {
+	return (typeof this.config.objectId == 'function') ? this.config.objectId() : ObjectId();
+}
 
 module.exports = function(config) {
 	return new MongoLocal(config);

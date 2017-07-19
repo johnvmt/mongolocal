@@ -8,6 +8,26 @@ NOTE: This project is not affiliated with MongoDB
 
 ## Changelog ##
 
+### Version 1.2.9 ###
+
+* Added option to generate _id using external function
+
+### Version 1.2.8 ###
+
+* Added hasNext function to cursor
+
+### Version 1.2.7 ###
+
+* Fixed bug that caused cursor to skip when removing items from array-based collection
+
+### Version 1.2.6 ###
+
+* Fixed bug in upsert that prevented callback from being triggered
+
+### Version 1.2.5 ###
+
+* Fixed bug in remove function that triggered emitter before deletion was complete
+
 ### Version 1.2.4 ###
 
 * Fixed bug in capped insert function
@@ -69,6 +89,19 @@ NOTE: This project is not affiliated with MongoDB
 	var mongolocal = require('mongolocal');
 	var collection = mongolocal({
 		max: 1000
+	});
+	
+#### Specify a function to generate _id ####
+
+	var maxId = 0;
+	function generateId() {
+		maxId++;
+		return maxId;
+	}
+
+	var mongolocal = require('mongolocal');
+	var collection = mongolocal({
+		objectId: generateId
 	});
 	
 ### Find documents ###
